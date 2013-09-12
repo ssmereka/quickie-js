@@ -8,15 +8,19 @@
     "url"  : ""
   },
   "dependencies": {
+    "bcrypt":               "0.7.7",
     "connect-flash":        "0.1.x",    
     "connect-mongo" :       "0.3.x",
     "colors":               "0.6.x",
+    "crypto":               "0.0.3",
     "express":              "3.4.x",    
     "express-validator":    "0.8.x",    
     "jade":                 "0.35.x",   
     "mongoose":             "3.6.x",
     "passport":             "0.1.x",    
-    "passport-local":       "0.1.x"    
+    "passport-local":       "0.1.x",
+    "sanitize-it":          "x.x.x",
+    "validator":            "1.5.1"
   },
   "engine": "node >= 0.10.x"
 }

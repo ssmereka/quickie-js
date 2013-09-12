@@ -1,3 +1,4 @@
+// ~> Model
 var mongoose    = require('mongoose'),                                              // Include object modeling for MongoDB
     Schema      = mongoose.Schema,                                                  // Mongoose schema object for MongoDB documents.
     ObjectId    = Schema.ObjectId,                                                  // Object ID used in mongoose schemas
@@ -5,12 +6,13 @@ var mongoose    = require('mongoose'),                                          
     saltRounds  = 10,                                                               // Number of rounds used to caclulate a salt for bcrypt password hashing.
     validator   = require('validator'),
     check       = validator.check,
-    sanitize    = validator.sanitize,
+
     crypto      = require('crypto'),
-    sanitize    = require('../modules/sanitize'),
-    utility     = require('../modules/utility');
+    sanitize    = require('sanitize-it');
 
 module.exports = function(app, db, config) {
+
+  var hash = require(config.paths.serverLibFolder + 'hash')(config);
 
   /* User Schema
    * Defines a user in the MongoDB table.
@@ -22,10 +24,10 @@ module.exports = function(app, db, config) {
     lastUpdated:        { type: Date, default: Date.now },                            // When this user object was last updated.
     lastUpdatedBy:      { type: ObjectId, ref: 'User' },                              // Who was the last person to update this user object.
     passwordHash:       { type: String },                             // A hash generated from the user's password.  Never store a plain text password.
-    passwordReset:      { type: String, default: utility.generateHashedKeySync(24) }, // A hash generated to reset a user's password.  This should never be plain text.
+    passwordReset:      { type: String, default: hash.generateHashedKeySync(24) }, // A hash generated to reset a user's password.  This should never be plain text.
     roles:              [{ type: ObjectId, ref: 'UserRole' }],                        // A list of roles the user is a part of.  Roles are used for things like authentication.
     securityQuestion:   { type: String },                                             // Challenge question given to a user when they try to reset their password.
-    securityAnswerHash: { type: String, default: utility.generateHashedKeySync(24) }  // User's correct answer to the challenge question when trying to reset their password.  This should never be stored as plain text.
+    securityAnswerHash: { type: String, default: hash.generateHashedKeySync(24) }  // User's correct answer to the challenge question when trying to reset their password.  This should never be stored as plain text.
   });
 
   /********************************************************/
@@ -48,7 +50,7 @@ module.exports = function(app, db, config) {
       password = new ObjectId().toString();
 
     this.password_hash = bcrypt.hashSync(password, saltRounds);             // Synchronous call to create a bcrypt salt & hash, then set that hash as the password.
-    this.password_reset = utility.generateKeySync(24);
+    this.password_reset = hash.generateKeySync(24);
   });
 
   /* Get Security Answer
