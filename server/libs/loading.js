@@ -1,54 +1,76 @@
 /* Loading Module
  */
 
-exports.app = function() {
-  var colors = require("../app/node_modules/colors");
-  return module.exports = require("../app/node_modules/express")(); 
-}
 
-exports.config = function(app) {
-  // Load the config file.  The config file holds all our applicaiton's settings.
+/**
+ * Create our application, configuration, and database objects.
+ * Also handle initial configurations for our application and express.
+ * Finally connect to the database.
+ */
+exports.app = function(next) {
+  // Load the config object. The config file holds all our applicaiton's settings.
   var configModule = require('../configs/config');
-  if(configModule === undefined) {
-    return log_e("Could not load config file.");
-  }
-
-  // Load the config object.
   var config = configModule.config();
+  
+  // Make sure we loaded a config object before we try to use it.
   if(config === undefined) {
-    return log_e("Could not load config module.");
+    return next(new Erorr("Could not load config module."));
   }
 
-  // Handle different operating modes set by using "export NODE_ENV=local" or "export NODE_ENV=development" or etc.
+  // Require some modules we will use.
+  var colors           = require(config.paths.nodeModulesFolder + "colors"),            // Display color strings in console.log();
+      express          = require(config.paths.nodeModulesFolder + "express"),           // Express will handle our sessions and routes at a low level.
+      expressValidator = require(config.paths.nodeModulesFolder + 'express-validator'); // Express validator will assist express.
+
+  // Create and return an application object created by express.
+  // We use module.exports as opposed to exports so that we can use
+  // the "app" object as a function.  (Reference: http://goo.gl/6yzmKc)
+  var app = module.exports = express(); 
+
+  // Handle configuration and setup for different server enviorment modes. (Such as local, development, and production).
   var success = configModule.configureEnviorment(require("../app/node_modules/express"), app, config);
   if(! success) {
-    
-    log_e("[ ERROR ] Could not load config enviorment".red);
-    return undefined;
-  } else {
-    
-    log_d("Debug mode activated", config);
-    log_d("Loaded config module successfully.", config);
-    return config;
+    return next(new Error("Could not load config enviorment"));
   }
+
+  // If in debug mode, notify the user it was turned on.
+  log_d("Debug mode activated", config);
+
+  // Setup express.
+  app.use(express.cookieParser());  // Setup express: enable cookies.
+  app.use(express.bodyParser());    // Setup express: enable body parsing.
+  app.use(expressValidator);        // Setup express validator.
+
+  // Configure and connect to the database.
+  database(app, config, function(err, db) {
+    next(err, app, config, db);   // Return the app, config, and database objects.
+  });
 }
 
-exports.express = function(app) {
-  var express = require('../app/node_modules/express'); 
-  app.use(express.cookieParser());                                       // Setup express: enable cookies.
-  app.use(express.bodyParser());                                         // Setup express: enable body parsing.
-  app.use(require('../app/node_modules/express-validator'));
-}
 
-exports.database = function(app, config, next) {
-  // Notify the user we are waiting for the database conneciton.
-  log_i("Connecting to database...");
+/**
+ * Setup and connect to the database configured in the
+ * server config file.  Return a database object once
+ * connected, or an error.
+ */
+var database = function(app, config, next) {
+  
+  // If our database connection could take some time.
+  // then notify the user we are waiting for the database conneciton.
+  if(config.enviorment !== "local") {
+    log_i("Connecting to database...");
+  }
 
+  // If we our use a Mongo DB
   if(config.mongodb.enabled) {                                         // If we are configuring a Mongo database.
-    var express = require('../app/node_modules/express'), 
-        mongoose = require('../app/node_modules/mongoose'),
-        MongoStore = require('../app/node_modules/connect-mongo')(express);
+    
+    // Load any modules used below.
+    var express = require(config.paths.nodeModulesFolder + 'express'), 
+        mongoose = require(config.paths.nodeModulesFolder + 'mongoose'),
+        MongoStore = require(config.paths.nodeModulesFolder + 'connect-mongo')(express);
 
+    // Setup a Mongo Session Store, this will define the database
+    // settings and event actions.
     var mongoSessionStore = new MongoStore({                           // Setup a mongo session store and code to run on a connection.
       url: config.mongodb.uri,                                         // Store the uri to connect to the database.
       auto_reconnect: true                                             // Enable auto reconnect if the database connection is lost.
@@ -72,34 +94,47 @@ exports.database = function(app, config, next) {
 
     });
 
+    // Set our Mongo Session Store object to be used by express.
     app.use(                                                           // Finally, execute our code to configure our connection to the mongodb database.
       express.session({                                                // Enable express sessions.
         secret: config.express.sessionKey,                             // Setup the secret session key.
         store: mongoSessionStore                                       // Setup & connect to the MongoDB database.
       })
     );
+
+  // If we are using PostgreSQL database.
   } else if(config.postgresql.enabled) {                               // If we are configuring a postgresql database.
-    log_e("Could not connect to postgresql, one was not configured.");
-    return next(undefined, undefined);
+    return next(new Error("Could not connect to postgresql, one was not configured."), undefined);
+  
+  // Otherwise, throw an error.
   } else {
-    log_e("Could not configure and connect to a database because there were not any enabled.");
+    return next(new Error("Could not configure and connect to a database because there were not any enabled."));
   }
 }
 
-exports.passport = function(app, db, config) {
-  var passport = require('../app/node_modules/passport');
 
-  app.use(require('../app/node_modules/connect-flash')());  // Enables flash messages while authenticating with passport.
+/**
+ * Configure and setup Passport for authentication.
+ */
+exports.passport = function(app, db, config) {
+  var passport = require(config.paths.nodeModulesFolder + 'passport');
+
+  app.use(require(config.paths.nodeModulesFolder + 'connect-flash')());  // Enables flash messages while authenticating with passport.
   app.use(passport.initialize());
   app.use(passport.session());
 
   log_d("Passport configured successfully.", config);
 }
 
+/**
+ * Finds and requires all of the routes in the specified order.
+ * The different types of routes are specified by a unique identifier
+ * followed by the type.  The order is specified by the config.routes
+ * array and should be configured in the server.js file.
+ */
 exports.routes = function (app, db, config, next) {
-  var identifier = "<quickie-file-type>",
-      fs         = require('fs'),
-      files      = {};
+  var fs    = require('fs'),
+      files = {};
 
   // Require all static folders as public static routes.
   requireStaticFolders(app, config);
@@ -123,91 +158,45 @@ exports.routes = function (app, db, config, next) {
   log_d("\tDirectory: " + config.paths.serverAppFolder, config);
   
   // Walk through all the files in the directory.
-  walkAsync(config.paths.serverAppFolder, function(err, file, next) {
+  walkAsync(config.paths.serverAppFolder, function(file, next) {
     fs.readFile(file, 'utf8', function(err, data) {
-      if(err) {
-        log_e("Walk Async encountered a problem: \n\n + " + err + "\n\n");
-      }
 
       // Check if the file contains a route tag.
       for(var i = 0; i < config.routes.length; i++) {
         // If it contains a route tag, then add it to the list of files to require.
-        if(data.toLowerCase().indexOf(identifier + config.routes[i]) != -1) {
+        if(data.toLowerCase().indexOf(config.routeTypeIdentifier + config.routes[i]) != -1) {
           files[i].push(file);
         }
       }
-
       next();
     });
   }, function(err, success){
+    if(err || ! success) {
+      next(err || new Error("There was a problem walking through the routes."));
+    }
+
     // If successful, require all the files in the correct order.
     log_d("Require Routes: ", config);
-    if(success) {
-      for(var key in files) {
-        files[key].forEach(function(file) {
-          requireFile(file, app, db, config);
-        });
-      }
-      next(undefined, true);
+    for(var key in files) {
+      files[key].forEach(function(file) {
+        requireFile(file, app, db, config);
+      });
     }
-  });
+    
+    next(undefined, true);
+  }, config.debugSystem);
 }
 
 exports.server = function(app, config) {
-  console.log("Start server");
   var port = (config.port);                                              // You can set the port using "export PORT=1234" or it will default to your configuration file.
   app.listen(port);                                                  // Start our server listening on previously declared port.
   if(config.mongodb.enabled) {
-    console.log("Listening on port %d in %s mode with database %s.", port, app.settings.env, config.mongodb.database);
+    console.log("[ OK ] Listening on port ".green + port.cyan + " in ".green + app.settings.env.cyan + " mode with database ".green + config.mongodb.database.cyan + ".".green);
   } else {
-    console.log("Listening on port %d in %s mode.", port, app.settings.env);
+    console.log("[ OK ] Listening on port ".green + port.cyan + " in ".green + app.settings.env.cyan + " mode.".green);
   }
 }
 
-
-
-/* Setup Database
- * Configure the database you setup in the config file.
- * It will return the connected database object
- *
- * TODO: Find a way to continue on even if the database
- *       fails to connect.
- */
-function setupDatabase(app, config, next){
-
-}
-
-/* Require Files
- * Given a root level directory and a file type, this funciton will loop through
- * and require all files of the specified type.  Currently the only folder it will 
- * look into is /core.  Example: If type is model, then it will search for all files
- * in /core and /core's subdirectories with "_model" in their name and require them.
- */
-exports.requireFiles = function(type, app, db, config, next) {
-  type = (type === undefined || type === null) ? undefined : '_' + type.toLowerCase();
-
-  walker.walk(config.dirname + "/core", function(err, file) {
-    if(file !== undefined && file !== null) {       // Don't try to load invalid files
-      if(type !== undefined && file.toLowerCase().indexOf(type) != -1) {  // If we are loading by file type, Don't load files that are not of the choosen type.
-        require(file)(app, db, config);
-      }
-    }
-  }, function(err, success) {
-    if(err) {
-      console.log(err);
-      if(next !== undefined)
-        next(err);
-    } else if ( ! success) {
-      err = new Error("There was a problem requiring files of type " + type);
-      console.log(err);
-      if(next !== undefined) 
-        next(err);
-    } else {
-      if(next !== undefined)
-        next(undefined, true);
-    }
-  });     
-}
 
 /* Require File
  * Requires a file with the given relative path.  A relative path
@@ -272,8 +261,7 @@ var configureFavIcon = function(app, config) {
 }
 
 var log_d = function(string, config) {
-  if(config !== undefined && config.debug) {
-    
+  if(config !== undefined && (config.debugSystem || config === true)) {
     if(/\r|\t/.exec(string)) {
       string = string.replace(/\t/g, '          ');  
       console.log(string.white);
@@ -281,6 +269,8 @@ var log_d = function(string, config) {
       string = "[ DEBUG ] " + string;
       console.log(string.magenta);
     }
+  } else if(config === undefined) {
+    console.log(string);
   }
 }
 
@@ -299,47 +289,62 @@ var log_i = function(string) {
   console.log(string.cyan);
 }
 
-
-var walkAsync = function(directory, action, next) {
+var walkAsync = function(directory, action, next, debug) {
+  var fs = require('fs');
   
   // Ensure the directory does not have a trailing slash.
   if(directory.substring(directory.length -1) === "/") {
     directory = directory.substring(0, directory.length -1);
   }
-
-  var fs = require('fs');
   
+  // Get a list of all the files and folders in the directory.
   fs.readdir(directory, function(err, list) {
     if(err) {
-     return next(err);
+      return next(err, false);
     }
     
+    // Create a count of the number of files and/or folders in the directory.
     var pending = list.length;
+    
+    // If we are at the end of the list, then return success!
     if( ! pending) {
       return next(null, true);
     }
     
+    // For each item in the list, perform an "action" and continue on.
     list.forEach(function(file) {
       
+      // Check if the file is invalid; ignore invalid files.
       if(isFileInvalid(file)) {
-        log_d("\tSkipping: " + directory + "/" + file, { debug: true});
+        log_d("\tSkipping: " + directory + "/" + file, debug);
         pending--;
         return;
       }
       
+      // Add a trailing / and file to the directory we are in.
       file = directory + '/' + file;
 
+      // Check if the item is a file or directory.
       fs.stat(file, function(err, stat) {
-        // If a directory
+        if(err) {
+          return next(err, false);
+        }
+        
+        // If a directory, add it to our list and continue walking.
         if (stat && stat.isDirectory()) {   
           walkAsync(file, action, function(err, success) {
             if (!--pending) {
               next(null, success);
             }
-          });
+          }, debug);
 
-        } else {  // If file.
-          action(err, file, function() {
+        // If a file, perform the action on the file and keep walking.
+        } else {  
+          action(file, function(err) {
+            if(err) {
+              next(err, false);
+            }
+
             if (!--pending) {
               next(null, true);
             }
@@ -365,5 +370,3 @@ var isFileInvalid = function(file) {
 
   return false;
 }
-
-exports.walk = walkAsync;

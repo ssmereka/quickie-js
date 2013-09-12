@@ -89,85 +89,20 @@ var productionConfig = {
   }
 }
 
-/****************************************/
-/******* Generic Config Variables *******/
-
-var root = __dirname + '/../public/';
-
+/* ************************************************** *
+ * *************** Default and System level Configs
+ * ************************************************** */
 
 var allConfig = {
-  installKey: SERVER_INSTALL_KEY,
+  
+  /* ************* Overridable Defaults ************* */
 
   host: 'localhost',
   port: '3000',
   protocol: 'https',
   debug: false,
-  underConstruction: false,
-
-  dirname: serverDirectory + "/app/",
 
   title: 'Livio Keys',
-  
-  /*uploads:  {
-        uploadDir: root + 'uploads',
-        tmpDir: root + 'tmp',
-        publicDir: root,
-        uploadUrl: '/uploads',        
-        maxPostSize: 11000000000,
-        minFileSize: 1,
-        maxFileSize: 1000000000,
-        acceptFileTypes: /.+/i,
-        accessControl: {
-          allowOrigin: '*',
-          allowMethods: 'OPTIONS, HEAD, GET, POST, PUT, DELETE'
-        },
-        nodeStatic: {
-          cache: 3600
-        }
-    }, */
-  
-  /*imageOptions: {
-    docRoot: root,
-    urlRoot: 'http://localhost:3000/',
-    stagingDir: root +'img/staging/',
-    processDir: 'img/processing/',
-    uploadDir: 'img/uploaded/',
-    originalDir: 'img/original/',
-     versions: [
-       // {"thmb":{w: 32, h: 32}},
-       // {"profile":{w: 200, h: null}},
-       {"full":{w: null, h: null}},
-    ],
-    seperator: '_',
-    directories: 'single',
-    namingConvention: 'date',
-    inputFields: ['profPhoto','other']
-  }, */
-
-
-  routes: [],
-
-  paths: {
-    staticFolders: [
-      clientDirectory + '/app/',
-      clientDirectory + '/libs/',
-      clientDirectory + '/public/',
-    ],
-
-    favIcon: clientDirectory + '/public/img/favicon.ico',
-    clientFolder: clientDirectory,
-    clientAppFolder: clientDirectory + "/app/",
-    serverAppFolder: serverDirectory + "/app/"
-  },
-
-  api: {
-    currentVersion: 'v1',
-    path: '/api'
-  },
-
-  express: {
-    sessionKey: 'CCCQ9V6Tg6RVFfFK5BjhQCBm3JjCFy4FI0TJOBP21dk'
-  },
 
   mongodb: {
     enabled: true,
@@ -179,6 +114,33 @@ var allConfig = {
     database: app['name'] + '_local'
   },
 
+  /* ************* System Level Configs ************* */
+  
+  api: {
+    currentVersion: 'v1',
+    path: '/api'
+  },
+  express: {                                                   // Express object holds configuration settings for all things express.
+    sessionKey: 'CCCQ9V6Tg6RVFfFK5BjBm3JjCFy4FI0TJOD21dk'      // The session key is used to keep the express sessions secure, keep this private.
+  },
+  debugSystem: false,                                          // Show additional system level debug information.
+  dirname: serverDirectory + "/app/",                          // Server application directory.
+  installKey: SERVER_INSTALL_KEY,                              // Server install key, a private key used to activate the installation of the server. (Keep it secret, keep it safe)
+  paths: {                                                     // The paths object contains information about where different files and folders are located on the disk.
+    staticFolders: [                                           // The folders listed in static folders will be required before all other routes as static.
+      clientDirectory + '/app/',                               // Client application folder.
+      clientDirectory + '/libs/',                              // Client libs folder.
+      clientDirectory + '/public/',                            // Client public folder, containing things such as images, css, etc.
+    ],
+    favIcon: clientDirectory + '/public/img/favicon.ico',      // Fav Icon location.
+    clientFolder: clientDirectory,                             // The client root folder.  All things client will be below this folder.
+    clientAppFolder: clientDirectory + "/app/",                // Client application folder, which stores all of the core components for the client application.
+    serverAppFolder: serverDirectory + "/app/",                // Server application folder, which stores all of the core components for the server application.
+    nodeModulesFolder: serverDirectory + "/app/node_modules/", // Folder that holds all of the dependency node modules, installed using npm.
+    serverConfigFolder: serverDirectory + "/configs/"          // Server configuration folder, stores all of the server configuration files.
+  },
+  routes: [],                                                  // Routes array lists the order in which routes will be required.
+  routeTypeIdentifier: "~>",                                   // Concatenated with a route type to uniquely identify a file as a specific route type.
   email_host: server_email_host,
   email_address: server_email_address,
   email_password: server_email_password,

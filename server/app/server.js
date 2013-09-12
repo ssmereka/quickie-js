@@ -1,14 +1,10 @@
-var load   = require("../libs/loading"),
-    app    = load.app(),
-    config = load.config(app);
+var load = require("../libs/loading");
 
-load.express(app);
-
-load.database(app, config, function(err, db) {
-  if(err || ! db) { 
-    return next(err || "[ ERROR ] Unknown database error.".red); 
+load.app(function(err, app, config, db) {
+  if(err) { 
+    return console.log(err.red);
   }
-  
+
   load.passport(app, db, config);
 
   // Configure order of your routes.
@@ -19,5 +15,4 @@ load.database(app, config, function(err, db) {
   load.routes(app, db, config, function(err, success) {
     load.server(app, config);
   });
-
 });
