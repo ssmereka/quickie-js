@@ -1,0 +1,22 @@
+{
+  "name": "Quickie",
+  "description": "",
+  "author": "",
+  "version": "0.0.1",
+  "repository": {
+    "type" : "git",
+    "url"  : ""
+  },
+  "dependencies": {
+    "connect-flash":        "0.1.x",    
+    "connect-mongo" :       "0.3.x",
+    "colors":               "0.6.x",
+    "express":              "3.4.x",    
+    "express-validator":    "0.8.x",    
+    "jade":                 "0.35.x",   
+    "mongoose":             "3.6.x",
+    "passport":             "0.1.x",    
+    "passport-local":       "0.1.x"    
+  },
+  "engine": "node >= 0.10.x"
+}
