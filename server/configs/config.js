@@ -26,10 +26,10 @@ var app = {
 /********** Email Server Config **********/
 
 var server_email_host          = 'Gmail';
-var server_email_address       = 'wopr@livioradio.com';  //'NoReply@livioconnect.com';
-var server_email_password      = 'E8496C6BC895B90C8A379AE6DBD438F11BD140093A51E9780234A53B902CDD70';
-var server_email_send_from     = 'Livio Connect <NoReply@livioconnect.com>';
-var server_email_send_to       = 'sales@livioconnect.com';
+var server_email_address       = 'blah@gmail.com';
+var server_email_password      = 'E291836BC895B90C8A379AE6DBD438F11BD140093A51E9780234A53B902CDD70';
+var server_email_send_from     = 'John Smith <NoReply@blah.com>';
+var server_email_send_to       = 'blah@blah.com';
 
 
 /*****************************************/
@@ -102,7 +102,7 @@ var allConfig = {
   protocol: 'https',
   debug: false,
 
-  title: 'Livio Keys',
+  title: 'Quickie',
 
   mongodb: {
     enabled: true,
