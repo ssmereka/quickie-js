@@ -39,7 +39,7 @@ exports.app = function(next) {
   // Setup express.
   app.use(express.cookieParser());  // Setup express: enable cookies.
   app.use(express.bodyParser());    // Setup express: enable body parsing.
-  app.use(expressValidator);        // Setup express validator.
+  //app.use(expressValidator);        // Setup express validator.
 
   // Configure and connect to the database.
   database(app, config, function(err, db) {
@@ -164,7 +164,7 @@ exports.routes = function (app, db, config, next) {
       // Check if the file contains a route tag.
       for(var i = 0; i < config.routes.length; i++) {
         // If it contains a route tag, then add it to the list of files to require.
-        if(data.toLowerCase().indexOf(config.routeTypeIdentifier + config.routes[i]) != -1) {
+        if(data.toLowerCase().indexOf(config.routeTypeIdentifier + " " + config.routes[i]) != -1) {
           files[i].push(file);
         }
       }
@@ -224,7 +224,7 @@ function requireFile(path, app, db, config) {
 
 
 var requireStaticFolders = function(app, config) {
-  var express = require("../app/node_modules/express");
+  var express = require(config.paths.nodeModulesFolder + "express");
 
   // If there are static folders in the config file, 
   // then we will configure them as static.
@@ -245,10 +245,10 @@ var configureViews = function(app, config) {
   log_d("\tFolder: " + config.paths.clientAppFolder, config);
 
   // Set up the root directory for our views.
-  app.set('views', config.paths.clientAppFolder); 
+  //app.set('views', config.paths.clientAppFolder); 
   
   // Set our view engin as JADE.
-  app.set('view engine', 'jade');                         
+  //app.set('view engine', 'jade');                         
 }
 
 var configureFavIcon = function(app, config) {
@@ -256,7 +256,7 @@ var configureFavIcon = function(app, config) {
   if(config.paths.favicon !== undefined) {
     log_d("Set favicon:", config);
     log_d("\tFile: " + config.paths.favIcon, config);
-    app.use(require("../app/node_modules/express").favicon(config.paths.favIcon));     // Display a favicon, use  express.favicon() to use the express default favicon.
+    app.use(require(config.paths.nodeModulesFolder + "express").favicon(config.paths.favIcon));     // Display a favicon, use  express.favicon() to use the express default favicon.
   }
 }
 

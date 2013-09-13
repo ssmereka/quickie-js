@@ -1,4 +1,4 @@
-// <quickie-file-type>Model</quickie-file-type>
+// ~> Model
 
 var mongoose    = require('mongoose'),                     // Include object modeling for MongoDB
     Schema      = mongoose.Schema,                         // Mongoose schema object for MongoDB documents.
@@ -11,6 +11,7 @@ module.exports = function(app, db, config) {
    */
   var UserRole = new Schema({
     name:  { type: String, required: true, trim: true, unique: true},
+    value: { type: Number, required: true, unique: true }
   });
 
   mongoose.model('UserRole', UserRole);                                             // Set the user role schema.

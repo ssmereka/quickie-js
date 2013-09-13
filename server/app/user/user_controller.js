@@ -2,7 +2,7 @@
 
 module.exports = function(app, db, config) {
   
-  var sender = require(config.serverLibFolder + "send"),
+  var sender = require(config.paths.serverLibFolder + "send")(config),
       User   = db.model('User');                                     // Pull in the user schema
 
   /********************************************************/

@@ -18,7 +18,7 @@ var SERVER_INSTALL_KEY = "IOlQ9V6Tg6RVL7DSJFL248723Bm3JjCF34FI0TJOVPvRzz";
 
 var app = {
   name: "quickie",
-  domain: "www.quickie.com"
+  domain: "quickie.com"
 }
 
 
@@ -123,7 +123,7 @@ var allConfig = {
   express: {                                                   // Express object holds configuration settings for all things express.
     sessionKey: 'CCCQ9V6Tg6RVFfFK5BjBm3JjCFy4FI0TJOD21dk'      // The session key is used to keep the express sessions secure, keep this private.
   },
-  debugSystem: false,                                          // Show additional system level debug information.
+  debugSystem: true,                                          // Show additional system level debug information.
   dirname: serverDirectory + "/app/",                          // Server application directory.
   installKey: SERVER_INSTALL_KEY,                              // Server install key, a private key used to activate the installation of the server. (Keep it secret, keep it safe)
   paths: {                                                     // The paths object contains information about where different files and folders are located on the disk.
@@ -132,10 +132,11 @@ var allConfig = {
       clientDirectory + '/libs/',                              // Client libs folder.
       clientDirectory + '/public/',                            // Client public folder, containing things such as images, css, etc.
     ],
-    favIcon: clientDirectory + '/public/img/favicon.ico',      // Fav Icon location.
+    favIcon: clientDirectory + '/public/img/quickie_favicon.ico',      // Fav Icon location.
     clientFolder: clientDirectory,                             // The client root folder.  All things client will be below this folder.
     clientAppFolder: clientDirectory + "/app/",                // Client application folder, which stores all of the core components for the client application.
     serverAppFolder: serverDirectory + "/app/",                // Server application folder, which stores all of the core components for the server application.
+    serverLibFolder: serverDirectory + "/libs/",
     nodeModulesFolder: serverDirectory + "/app/node_modules/", // Folder that holds all of the dependency node modules, installed using npm.
     serverConfigFolder: serverDirectory + "/configs/"          // Server configuration folder, stores all of the server configuration files.
   },
@@ -212,7 +213,6 @@ var configureEnviorment = function(express, app) {
   var env = (process.env.NODE_ENV !== undefined) ? process.env.NODE_ENV.toLowerCase() : '';
   switch(env) {
     case 'local':
-      app.disabled('verbose errors');
       app.enable('verbose errors');
       app.use(express.logger('dev'));
       return true;

@@ -6,32 +6,43 @@ var mongoose    = require('mongoose'),                                          
     saltRounds  = 10,                                                               // Number of rounds used to caclulate a salt for bcrypt password hashing.
     validator   = require('validator'),
     check       = validator.check,
-
-    crypto      = require('crypto'),
     sanitize    = require('sanitize-it');
 
 module.exports = function(app, db, config) {
 
+  // Load our hashing library.
   var hash = require(config.paths.serverLibFolder + 'hash')(config);
 
   /* User Schema
    * Defines a user in the MongoDB table.
    */
   var User = new Schema({
-    activated:          { type: Boolean, default: false },                            // Defines if the user should be allowed to do anything.  For example: login, update their information, etc.
-    email:              { type: String, trim: true, lowercase: true, unique: true },  // Email address for the user, must be unique.  This is what the user will login with.
-    name:               { type: String, trim: true },                                 // User's name.
-    lastUpdated:        { type: Date, default: Date.now },                            // When this user object was last updated.
-    lastUpdatedBy:      { type: ObjectId, ref: 'User' },                              // Who was the last person to update this user object.
-    passwordHash:       { type: String },                             // A hash generated from the user's password.  Never store a plain text password.
-    passwordReset:      { type: String, default: hash.generateHashedKeySync(24) }, // A hash generated to reset a user's password.  This should never be plain text.
-    roles:              [{ type: ObjectId, ref: 'UserRole' }],                        // A list of roles the user is a part of.  Roles are used for things like authentication.
-    securityQuestion:   { type: String },                                             // Challenge question given to a user when they try to reset their password.
-    securityAnswerHash: { type: String, default: hash.generateHashedKeySync(24) }  // User's correct answer to the challenge question when trying to reset their password.  This should never be stored as plain text.
+    activated:           { type: Boolean, default: false },                            // Defines if the user should be allowed to do anything.  For example: login, update their information, etc.
+    dateCreated:         { type: Date, default: Date.now },                            // Stores the date the user was created.
+    deactivatedMessage:  { type: String, default: ""},                                 // A message about why the user account is deactivated.  This should be shown to the user if a login attempt is made while the account is deactivated.
+    email:               { type: String, trim: true, lowercase: true, unique: true },  // Email address for the user, must be unique.  This is what the user will login with.
+    failedLoginAttempts: { type: Number, default: 0 },                                 // Stores the number of failed login attempts since the last successful login.  Updating this value does not trigger the lastUpdated or lastUpdatedBy values to change.
+    firstName:           { type: String, trim: true },                                 // User's first name.
+    lastName:            { type: String, trim: true },                                 // User's last name.
+    lastLogin:           { type: Date, default: Date.now },                            // Stores the last date and time the user logged in.  Updating this value does not trigger the lastUpdated or lastUpdatedBy values to change.
+    lastUpdated:         { type: Date, default: Date.now },                            // When this user object was last updated.
+    lastUpdatedBy:       { type: ObjectId, ref: 'User' },                              // Who was the last person to update this user object.
+    passwordHash:        { type: String },                                             // A hash generated from the user's password.  Never store a plain text password.
+    passwordReset:       { type: String, default: hash.generateHashedKeySync(24) },    // A hash generated to reset a user's password.  This should never be plain text.
+    roles:               [{ type: ObjectId, ref: 'UserRole' }],                        // A list of roles the user is a part of.  Roles are used for things like authentication.
+    securityQuestion:    { type: String },                                             // Challenge question given to a user when they try to reset their password.
+    securityAnswerHash:  { type: String, default: hash.generateHashedKeySync(24) }     // User's correct answer to the challenge question when trying to reset their password.  This should never be stored as plain text.
   });
 
   /********************************************************/
   /**************** User Virtual Attributes ***************/
+
+  /* Full Name
+   * Returns the user's full name.
+   */
+  User.virtual('name').get(function() {
+    return this.firstName + this.lastName;
+  });
 
   /* Get Password
    * Returns the user's password hash.
@@ -65,21 +76,12 @@ module.exports = function(app, db, config) {
    * answer.  If the parameter is undefined, then a unique answer
    * will be generated and encrypted for you.
    */
-  User.virtual('securityAnswer').set(function(answer, next) {
+  User.virtual('securityAnswer').set(function(answer) {
     if(answer === undefined || answer === null || answer === "")
       answer = new ObjectId().toString();
-
-    if(next) {
-      bcrypt.hash(answer, saltRounds, function(err, hash) {                         // Generate a salt and hash
-        if(err) return next(err);                                                   // Let the next function handle the error.
-        
-        this.security_answer = hash;                                                // Set the user's password hash
-        return next();
-      });
-    } else {
-      this.security_answer = bcrypt.hashSync(answer, saltRounds);                   // Synchronous call to create a bcrypt salt & hash, then set that hash as the password.
-      return true;
-    }
+    
+    this.security_answer = bcrypt.hashSync(answer, saltRounds);                   // Synchronous call to create a bcrypt salt & hash, then set that hash as the password.
+    return true;
   });
 
   /********************************************************/
@@ -105,6 +107,9 @@ module.exports = function(app, db, config) {
   };
 
 
+  /* Delete User
+   * Remove the user object from the database.
+   */
   User.methods.delete = function(userId, next) {
     var user = this;
 
@@ -116,61 +121,116 @@ module.exports = function(app, db, config) {
     });
   }
 
+  User.methods.failedLoginAttempt = function (next) {
+    var user = this,
+        obj  = {};
+    obj.failedLoginAttempts = user.failedLoginAttempts + 1;
+
+    // After too many failed logins, lock out the account.
+    if(obj.failedLoginAttempts >= 5) {
+      obj.activated = false;
+      obj.deactivatedMessage = "Account has been deactivated due to too many unsuccessful login attempts.";
+    }
+
+    user.update(obj, undefined, next);
+  }
+
+  User.methods.successfulLogin = function(next) {
+    var user = this, 
+        obj  = {};
+    obj["lastLogin"] = Date.now();
+    obj["failedLoginAttempts"] = 0;
+    user.update(obj, undefined, next);
+  }
+
   /* Update
    * Takes in an object parameter and updates the appropriate user fields.
    */
   User.methods.update = function(obj, userId, next) {
-    if( ! obj)
-      return next(new Error('Can not update the user object because the parameter is not valid.'));
+    if( ! obj) {
+      var err = new Error('Can not update the user object because the parameter is not valid.')
+      if(next !== undefined) {
+        return next(err);
+      }
+      return console.log(err);
+    }
 
     var user = this,
+        isUserUpdated = false,
         isLastUpdated = false,
         isLastUpdatedBy = false,
         value = undefined;
 
+    // Loop through each property in the new object.  Verify each property and update the user object accordingly.
     for (var key in obj) {
       switch(key) {
+        
+        // Number Property Types
+        case 'failedLoginAttempts':
+          value = sanitize.number(obj[key]);
+          break;
+
+        // Object ID Property Types
         case 'lastUpdatedBy':
           isLastUpdatedBy = true;
         case 'roles':
           value = sanitize.objectId(obj[key]);
           break;
 
+        // Date Property Types
+        case 'dateCreated':
+        case 'lastLogin':
         case 'lastUpdated':
           isLastUpdated = true;
           value = sanitize.date(obj[key]);
           break;
 
+        // Boolean Property Types  
         case 'activated':
           value = sanitize.boolean(obj[key]);
           break;
 
-        case 'password':
-          value = sanitize.string(obj[key]);
-          if(value !== undefined)
-            user.password = value;
-          break;
-
+        // String Property Types, handled by default.
         default:
           value = sanitize.string(obj[key]);
           break;
       }
 
-      if(value !== undefined)
+      // If the value was valid, then update the user object.
+      if(value !== undefined) {
+        
+        // Trigger an update to the lastUpdated and lastUpdatedBy property if we are not tracking a login or login attempt.
+        if(key !== "failedLoginAttempts" && key !== "lastLogin") {
+          isUserUpdated = true
+        }
+        
+        // Update the user property with the new value.
         user[key] = value;
+      }
     }
 
-    if( ! isLastUpdated)
+    if( ! isLastUpdated && isUserUpdated) {
       user['lastUpdated'] = Date.now();
+    }
 
-    if( ! isLastUpdatedBy)
+    if( ! isLastUpdatedBy && isUserUpdated) {
       user['lastUpdatedBy'] = sanitize.objectId(userId);
+    }
 
     user.save(function(err, user) {
-      if(err) return next(err);
-      if(!user) return next(new Error('There was a problem saving the updated user object.'));
+      if(! user && ! err) {
+        var err = new Error('There was a problem saving the updated user object.');
+      }
 
-      return next(undefined, user);
+      if(err) {
+        if(next !== undefined) {
+          return next(err);
+        }
+        return console.log(err);
+      }
+
+      if(next !== undefined)
+        return next(undefined, user);
     });
   }
 
@@ -178,6 +238,11 @@ module.exports = function(app, db, config) {
   /********************************************************/
   /********************** User Events *********************/
 
+  /* Before Saving User
+   * Executed before saving the object, checks to make sure
+   * the schema object is valid.
+   * Note:  This is executed after the schema model checks.
+   */
   User.pre('save', function(next) {
     var user = this;
 
