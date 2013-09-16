@@ -89,26 +89,6 @@ module.exports = function(app, db, config) {
     }
   }
 
-
-  /* ************************************************** *
-   * ******************** Passport Configuration
-   * ************************************************** */
-  
-  /* Local Strategy
-   * Configures passport to authenticate a user by username & password.
-   */
-  passport.use(new LocalStrategy(usernameAndPasswordAuth));
-
-  /* Passport Serialize User
-   */
-  passport.serializeUser(serializeUser);
-
-  /* Passport DeserializeUser
-   * Defines how passport will get the user from the database.
-   */
-  passport.deserializeUser();
-
-
   /* ************************************************** *
    * ******************** Passport Methods
    * ************************************************** */
@@ -160,5 +140,23 @@ module.exports = function(app, db, config) {
         }
     });
   }
+
+  /* ************************************************** *
+   * ******************** Passport Configuration
+   * ************************************************** */
+  
+  /* Local Strategy
+   * Configures passport to authenticate a user by username & password.
+   */
+  passport.use(new LocalStrategy(usernameAndPasswordAuth));
+
+  /* Passport Serialize User
+   */
+  passport.serializeUser(serializeUser);
+
+  /* Passport DeserializeUser
+   * Defines how passport will get the user from the database.
+   */
+  passport.deserializeUser(deserializeUser);
 
 };
