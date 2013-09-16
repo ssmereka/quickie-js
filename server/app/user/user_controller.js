@@ -3,12 +3,13 @@
 module.exports = function(app, db, config) {
   
   var sender = require(config.paths.serverLibFolder + "send")(config),
+      auth   = require(config.paths.serverLibFolder + "auth")(config),
       User   = db.model('User');                                     // Pull in the user schema
 
   /********************************************************/
   /************************ Routes ************************/
 
-  app.get('/users.:format', users);                                  // Get all users.
+  app.get('/users.:format', auth.allowRoles(["Admin"]), users);      // Get all users.
   app.get('/users/:userId.:format', user);                           // Get a specific user.
 
   app.post('/users.:format', create);                                // Create a new user.

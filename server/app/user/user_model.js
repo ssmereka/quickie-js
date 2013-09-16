@@ -60,8 +60,8 @@ module.exports = function(app, db, config) {
     if(password === undefined || password === null || password === "")
       password = new ObjectId().toString();
 
-    this.password_hash = bcrypt.hashSync(password, saltRounds);             // Synchronous call to create a bcrypt salt & hash, then set that hash as the password.
-    this.password_reset = hash.generateKeySync(24);
+    this.passwordHash = bcrypt.hashSync(password, saltRounds);             // Synchronous call to create a bcrypt salt & hash, then set that hash as the password.
+    this.passwordReset = hash.generateKeySync(24);
   });
 
   /* Get Security Answer
@@ -103,7 +103,7 @@ module.exports = function(app, db, config) {
   User.methods.authenticate = function(passwordString, next) {
     if(next)
       return bcrypt.compare(passwordString, this.password, next);                   // Asynchronous call to compare the password to the encrypted password.
-    return bcrypt.compareSync(passwordString, this.password_hash);                  // Synchronous call to compare the password to the encrypted password.
+    return bcrypt.compareSync(passwordString, this.passwordHash);                  // Synchronous call to compare the password to the encrypted password.
   };
 
 

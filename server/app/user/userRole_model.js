@@ -11,7 +11,7 @@ module.exports = function(app, db, config) {
    */
   var UserRole = new Schema({
     name:  { type: String, required: true, trim: true, unique: true},
-    value: { type: Number, required: true, unique: true }
+    value: { type: Number, required: true}
   });
 
   mongoose.model('UserRole', UserRole);                                             // Set the user role schema.

@@ -6,7 +6,8 @@ module.exports = function(app, db, config) {
   
   var ObjectId = db.Types.ObjectId,
       User     = db.model('User'),
-      UserRole = db.model('UserRole');
+      UserRole = db.model('UserRole'),
+      sender  = require(config.paths.serverLibFolder + "send")(config);
 
   /********************************************************/
   /************************ Routes ************************/
@@ -20,6 +21,7 @@ module.exports = function(app, db, config) {
   function install(req, res, next) {
     loadDatabaseSchema(config, "userRoles", undefined);
     loadDatabaseSchema(config, "user", undefined);
+    return sender.send(true, req, res, next);
     next();
   }
 
