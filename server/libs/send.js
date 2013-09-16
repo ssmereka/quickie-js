@@ -5,7 +5,9 @@
  * ******************** External Modules
  * ************************************************** */
 
-var sanitize;
+var isInit = false,
+    sanitize,
+    config = {};
 
 
 /* ************************************************** *
@@ -14,7 +16,9 @@ var sanitize;
 
 var sanitizeApiObject = function(err, obj, req, res) {
   if(! sanitize.isApi(req)) {
-    return err;
+    if(err) {
+      return err;
+    }
   }
 
   var apiObj = {};
@@ -62,7 +66,10 @@ var lib = {
   },
 
   sendError: function(err, errorCode, req, res, next) {
-    var obj = sanitizeApiObject(err, obj, req, res);
+    var obj = sanitizeApiObject(err, undefined, req, res);
+    if(config.debugSystem) {
+      console.log("[ ERROR ] Sending Error: ".red + "\n          " + obj.toString().white);
+    }
 
     if(sanitize.isJson(req)) {
       return res.send(obj, errorCode);
@@ -73,6 +80,8 @@ var lib = {
     }
 
     if(next !== undefined) {
+      console.log(req.params);
+      console.log("Invalid Format: " + req.url );
       return next();
     }
 
@@ -88,9 +97,15 @@ var lib = {
  * ******************** Initialization Method
  * ************************************************** */
 
-init = function(config) {
-  if(config !== undefined) {
-    sanitize = require(config.paths.nodeModulesFolder + 'sanitize-it');  // Include bcrypt for password hashing.
+init = function(_config) {
+  if(isInit) {
+    return lib;
+  }
+  
+  if(_config !== undefined) {
+    sanitize = require(_config.paths.nodeModulesFolder + 'sanitize-it');  // Include bcrypt for password hashing.
+    config = _config;
+    isInit = true;
     return lib;
   } else {
     console.log("[ ERROR ] Config initialize send if config is null");

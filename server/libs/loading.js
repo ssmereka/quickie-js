@@ -34,7 +34,7 @@ exports.app = function(next) {
   }
 
   // If in debug mode, notify the user it was turned on.
-  log_d("Debug mode activated", config);
+  log_d("System level debug mode activated", config);
 
   // Setup express.
   app.use(express.cookieParser());  // Setup express: enable cookies.
@@ -43,7 +43,24 @@ exports.app = function(next) {
 
   // Configure and connect to the database.
   database(app, config, function(err, db) {
-    next(err, app, config, db);   // Return the app, config, and database objects.
+    if(err) {
+      return next(err);
+    } else if(! db) {
+      return next(new Error('Could not load or connect to database.'));
+    }
+
+    // Load the database modules.
+    requireTypesInFolder(["model"], config.paths.serverAppFolder, app, db, config, function(err, success) {
+      if(err) {
+        return next(err);
+      } else if( ! success) {
+        return next(new Error("Could not load models."));
+      }
+      
+      loadlibs(app, db, config, function(err, success) {
+        next(err, app, config, db);   // Return the app, config, and database objects.
+      });
+    });
   });
 }
 
@@ -134,7 +151,8 @@ exports.passport = function(app, db, config) {
  */
 exports.routes = function (app, db, config, next) {
   var fs    = require('fs'),
-      files = {};
+      files = {},
+      routesModelIndex;
 
   // Require all static folders as public static routes.
   requireStaticFolders(app, config);
@@ -148,23 +166,30 @@ exports.routes = function (app, db, config, next) {
   // Setup our view engine and directory.
   configureViews(app, config);
 
+  requireTypesInFolder(config.routes, config.paths.serverAppFolder, app, db, config, function(err, success) {
+    next(err, success);
+  });
+}
+
+var requireTypesInFolder = function(types, folder, app, db, config, next) {
+  var fs    = require('fs'),
+      files = {};
+
   // Initialize the files object.
-  for(var i = 0; i < config.routes.length; i++) {
+  for(var i = 0; i < types.length; i++) {
     files[i] = [];
   }
   
-
-  log_d("Finding all routes in: ", config);
-  log_d("\tDirectory: " + config.paths.serverAppFolder, config);
-  
-  // Walk through all the files in the directory.
-  walkAsync(config.paths.serverAppFolder, function(file, next) {
+  log_d("Selecting files to require in: ", config);
+  log_d("\tDirectory: " + folder, config);
+   // Walk through all the files in the directory.
+  walkAsync(folder, function(file, next) {
     fs.readFile(file, 'utf8', function(err, data) {
 
       // Check if the file contains a route tag.
-      for(var i = 0; i < config.routes.length; i++) {
+      for(var i = 0; i < types.length; i++) {
         // If it contains a route tag, then add it to the list of files to require.
-        if(data.toLowerCase().indexOf(config.routeTypeIdentifier + " " + config.routes[i]) != -1) {
+        if(data.toLowerCase().indexOf(config.routeTypeIdentifier + " " + types[i]) != -1) {
           files[i].push(file);
         }
       }
@@ -185,6 +210,19 @@ exports.routes = function (app, db, config, next) {
     
     next(undefined, true);
   }, config.debugSystem);
+}
+
+var loadlibs = function(app, db, config, next) {
+  // Preload important modules that require a callback.
+  require(config.paths.serverLibFolder + "auth")(config, db, function(err, auth) {
+    if(err) {
+      log_e(err);
+    } else if( ! auth) {
+      log_e("Failed to load auth library.");
+    }
+
+    next(undefined, true);
+  });
 }
 
 exports.server = function(app, config) {

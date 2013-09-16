@@ -4,7 +4,9 @@
  * ******************** External Modules
  * ************************************************** */
 var isInit = false,
-    sender;
+    sender,
+    db,
+    allRoles = [];
 
 /* ************************************************** *
  * ******************** Private Methods
@@ -16,10 +18,6 @@ var checkForInit = function() {
     return false;
   }
   return true;
-}
-
-var isUserLoggedIn = function(req, res, next) {
-
 }
 
 /* ************************************************** *
@@ -99,14 +97,47 @@ var lib = {
  * ******************** Initialization Method
  * ************************************************** */
 
-var init = function(config) {
-  if(config !== undefined) {
-    isInit = true;
-    sender = require(config.paths.serverLibFolder + "send")(config);
+var init = function(_config, _db, next) {
+  if(isInit) {
     return lib;
-  } else {
-    console.log("[ ERROR ] Config initialize auth if config is undefined");
   }
+
+  if(_config !== undefined || _db !== undefined) {
+    config = _config;
+    db = _db;
+    sender = require(_config.paths.serverLibFolder + "send")(config);
+    initRoleArray(_config, _db, function(err, _allRoles) {
+      if(err) {
+        next(new Error(err));
+      }
+      allRoles = _allRoles;
+      isInit = true;
+      next(undefined, lib);
+    });
+  } else {
+    next(new Error("[ ERROR ] Auth Lib: Config and DB must be defined in order to initialize the auth lib."));
+  }
+}
+
+var initRoleArray = function(config, db, next) {
+  var UserRole = db.model('UserRole');
+  var _allRoles = [];
+
+  UserRole.find({}).sort({index: 1}).exec(function(err, roles) {
+    if(err) {
+      return next(err);
+    }
+
+    if(! roles) {
+      return next(undefined, _allRoles);
+    }
+
+    for(var i = 0; i < roles.length; i++) {
+      _allRoles.push(roles[i].name.toLowerCase());
+    }
+    
+    return next(undefined, _allRoles);
+  });
 }
 
 exports = module.exports = init;

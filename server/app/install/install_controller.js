@@ -34,8 +34,11 @@ module.exports = function(app, db, config) {
     switch(schema) {
       case 'userRoles':
         clearSchemaObjects("userroles");
-        addToSchema(new UserRole({ _id: ObjectId("51a8dd107deeb3910a000000"), name: 'Admin', value: 0 }));
-        addToSchema(new UserRole({ _id: ObjectId("51a8dd107deeb3910a000001"), name: 'User',  value: 1 }));
+        addToSchema(new UserRole({ name: 'Super Admin', index: 0 }));
+        addToSchema(new UserRole({ name: 'Admin',       index: 1 }));
+        addToSchema(new UserRole({ name: 'Moderator',   index: 2 }));
+        addToSchema(new UserRole({ name: 'User',        index: 3 }));
+        addToSchema(new UserRole({ name: 'Guest',       index: 4 }));
         info = "Loaded user roles to the database".white;
         break;
 
@@ -47,7 +50,7 @@ module.exports = function(app, db, config) {
           firstName: "Admin",
           password: config.installKey,
           securityAnswer: config.installKey,
-          roles: [ ObjectId("51a8dd107deeb3910a000000") ], 
+          roles: [ "Admin" ], 
           security_question: 'What is the install key?' });
 
         addToSchema(user, undefined);

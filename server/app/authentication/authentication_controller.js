@@ -42,6 +42,9 @@ module.exports = function(app, db, config) {
    * Log a user out and terminate their session.
    */
   function logout(req, res, next) {
+    if(! req.isAuthenticated()) {
+      return sender.sendError(new Error("User is already logged out."), 400, req, res, next);
+    }
     req.logout();
     return sender.send("OK", req, res, next);
   }
@@ -111,7 +114,6 @@ module.exports = function(app, db, config) {
    * user or an error.  Also handles any logic around logging in a user.
    */
   var usernameAndPasswordAuth = function (username, password, next) {
-    console.log("User & Password Auth.");
     if(sanitize.value(username) === undefined) {
         console.log("Username cant be null");
         return next(null, false, new Error('Please enter an email address.' ));

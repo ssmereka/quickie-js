@@ -3,7 +3,7 @@
 module.exports = function(app, db, config) {
   
   var sender = require(config.paths.serverLibFolder + "send")(config),
-      auth   = require(config.paths.serverLibFolder + "auth")(config),
+      auth   = require(config.paths.serverLibFolder + "auth")(),
       User   = db.model('User');                                     // Pull in the user schema
 
   /********************************************************/
@@ -35,9 +35,10 @@ module.exports = function(app, db, config) {
    * Get all the users and return them in the requested format.
    */
   function users(req, res, next) {
+    console.log("Users: ");
     User.find().sort('name').exec(function(err, users) {             // Find all the users and sort them by their name attribute.
       if(err) return next(err);
-
+      console.log(users);
       sender.send(users, req, res);                                  // Handles the request by sending back the appropriate response, if we havn't already.
     });
   }

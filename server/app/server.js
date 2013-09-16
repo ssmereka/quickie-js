@@ -12,7 +12,6 @@ load.app(function(err, app, config, db) {                  // Create and configu
   load.passport(app, db, config);                          // Load and configure passport for authentication.
 
   // Set the order of your routes.
-  config.routes.push("model")                              // Load models first, since they will be used by controllers.
   config.routes.push("controller");                        // Load all non-static controllers.
   config.routes.push("error");                             // Finally, load an error handler.  If no other routes handle the request, then the error handler will step in.
   

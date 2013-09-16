@@ -1,11 +1,11 @@
 {
-  "name": "Quickie",
-  "description": "",
-  "author": "",
+  "name": "Quickie-JS",
+  "description": "Template for a quick maintainable website using very powerful JavaScript frameworks.",
+  "author": "Scott Smereka",
   "version": "0.0.1",
   "repository": {
     "type" : "git",
-    "url"  : ""
+    "url"  : "https://github.com/ssmereka/quickie-js.git"
   },
   "dependencies": {
     "bcrypt":               "0.7.7",
@@ -16,10 +16,11 @@
     "express":              "3.4.x",    
     "express-validator":    "0.8.x",    
     "jade":                 "0.35.x",   
+    "mongodb":              "1.2.x",
     "mongoose":             "3.6.x",
     "passport":             "0.1.x",    
     "passport-local":       "0.1.x",
-    "sanitize-it":          "x.x.x",
+    "sanitize-it":          "",
     "validator":            "1.5.1"
   },
   "engine": "node >= 0.10.x"
