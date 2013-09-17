@@ -12,5 +12,6 @@ logs
 results
 npm-debug.log
 node_modules
+server/app/node_modules
 sftp-config.json
 uploads
