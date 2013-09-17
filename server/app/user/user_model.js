@@ -11,7 +11,8 @@ var mongoose    = require('mongoose'),                                          
 module.exports = function(app, db, config) {
 
   // Load our hashing library.
-  var hash = require(config.paths.serverLibFolder + 'hash')(config);
+  var hash = require(config.paths.serverLibFolder + 'hash')(config),
+      log  = require(config.paths.serverLibFolder + "log")();
 
   /* User Schema
    * Defines a user in the MongoDB table.
@@ -121,6 +122,11 @@ module.exports = function(app, db, config) {
     });
   }
 
+  /**
+   * Log a failed loggin attempt.  After too many failed
+   * login attempts, then deactivate the account. Also 
+   * provides a message as to why the account was deactivated.
+   */
   User.methods.failedLoginAttempt = function (next) {
     var user = this,
         obj  = {};
@@ -135,12 +141,33 @@ module.exports = function(app, db, config) {
     user.update(obj, undefined, next);
   }
 
+
+  /**
+   * Record and update a user for a successful login.
+   * A successful login clears the fail login attempts counter.
+   */
   User.methods.successfulLogin = function(next) {
     var user = this, 
         obj  = {};
     obj["lastLogin"] = Date.now();
     obj["failedLoginAttempts"] = 0;
     user.update(obj, undefined, next);
+  }
+
+  /**
+   * Strip out secret information that should not be seen
+   * outside of this server.  This should be called before
+   * returning a user object to a client.
+   */
+  User.methods.sanitize = function() {
+    var user = this;
+    user = user.toObject();
+
+    delete user.passwordHash;
+    delete user.passwordReset;
+    delete user.__v;
+    delete user.securityAnswerHash;
+    return user;
   }
 
   /* Update
@@ -152,7 +179,7 @@ module.exports = function(app, db, config) {
       if(next !== undefined) {
         return next(err);
       }
-      return console.log(err);
+      return log.e(undefined, err);
     }
 
     var user = this,
@@ -226,7 +253,7 @@ module.exports = function(app, db, config) {
         if(next !== undefined) {
           return next(err);
         }
-        return console.log(err);
+        return log.e(undefined, err);
       }
 
       if(next !== undefined)

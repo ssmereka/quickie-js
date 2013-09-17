@@ -7,7 +7,8 @@ module.exports = function(app, db, config) {
   var ObjectId = db.Types.ObjectId,
       User     = db.model('User'),
       UserRole = db.model('UserRole'),
-      sender  = require(config.paths.serverLibFolder + "send")(config);
+      sender   = require(config.paths.serverLibFolder + "send")(),
+      log      = require(config.paths.serverLibFolder + "log")();
 
   /********************************************************/
   /************************ Routes ************************/
@@ -60,8 +61,7 @@ module.exports = function(app, db, config) {
     
     if(next != undefined)
       return next(undefined, info);
-
-    console.log(info);
+    log.i(info);
   }
 
 

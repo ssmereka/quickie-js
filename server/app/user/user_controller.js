@@ -38,6 +38,11 @@ module.exports = function(app, db, config) {
     console.log("Users: ");
     User.find().sort('name').exec(function(err, users) {             // Find all the users and sort them by their name attribute.
       if(err) return next(err);
+
+      for(var i = 0; i < users.length; i++) {
+        users[i] = users[i].sanitize();
+      }
+
       console.log(users);
       sender.send(users, req, res);                                  // Handles the request by sending back the appropriate response, if we havn't already.
     });
