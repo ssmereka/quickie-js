@@ -5,35 +5,40 @@
  * ******************** External Modules
  * ************************************************** */
 
-var isInit = false,
-    sanitize,
-    config = {};
+var config, debug, isInit = false, log, sanitize;
 
 
 /* ************************************************** *
  * ******************** Private Methods
  * ************************************************** */
 
-var sanitizeApiObject = function(err, obj, req, res) {
+var sanitizeObj = function(obj, req) {
+  // Return object as is, if this is not an api call.
   if(! sanitize.isApi(req)) {
-    if(err) {
-      return err;
-    }
+    return (obj) ? obj : undefined;
   }
 
-  var apiObj = {};
-
-  if(err) {
-    apiObj["status"] = "ERROR";
-    apiObj["error"] = err;
-    if(obj) {
-      apiObj["response"] = obj;
-    }
-  } else {
-    apiObj["status"] = "OK"
-    apiObj["response"] = obj;
-  }
+  // Return obj as API object.
+  var apiObj = {}
+  apiObj["status"] = "OK"
+  apiObj["response"] = obj;
   return apiObj;
+}
+
+var sanitizeError = function(err, req) {
+
+
+  // Return error as object.
+  if(! sanitize.isApi(req)) {
+    return { "error" : err.message, "status": err.status };
+  }
+
+  // Return error as API object.
+  var apiErr = {}
+  apiErr["status"] = err.status;
+  apiErr["error"] = err.message;
+  apiErr["response"] = {};
+  return apiErr;
 }
 
 
@@ -43,9 +48,9 @@ var sanitizeApiObject = function(err, obj, req, res) {
 
 var lib = {
   
-  send: function(obj, req, res, next) {
+  send: function send(obj, req, res, next) {
     // If the request was an API request, then format it as so.
-    obj = sanitizeApiObject(undefined, obj, req, res);
+    obj = sanitizeObj(obj, req);
 
     if(sanitize.isJson(req)) {
       return res.send(JSON.stringify(obj));
@@ -65,29 +70,56 @@ var lib = {
     }
   },
 
-  sendError: function(err, errorCode, req, res, next) {
-    var obj = sanitizeApiObject(err, undefined, req, res);
-    if(config.debugSystem) {
-      console.log("[ ERROR ] Sending Error: ".red + "\n          " + obj.toString().white);
+  createAndSendError: function createAndSendError(err, status, req, res, next) {
+    if(err && ! err.message) {
+      var obj = new Error(err);
+      err = obj;
     }
 
-    if(sanitize.isJson(req)) {
-      return res.send(obj, errorCode);
+    if(! err) {
+      err = new Error("undefined");
     }
 
+    if(! err.status) {
+      if(status) {
+        err.status = status;
+      }
+    }
+
+    return this.sendError(err, req, res, next);
+  },
+
+  sendError: function sendError(err, req, res, next) {
+    // Ensure we have a valid error object.
+    if(! err) {
+      err = new Error("undefined");
+    }
+    
+    // Ensure the error object has a status.
+    if(! err.status) {
+      err.status = 500;
+    }
+
+    // Log the error if we are in debug mode.
+    log.e(err, debug);
+
+    // Create an object we can send to the user.
+    var errObj = sanitizeError(err, req);
+    
+    // Send a TEXT response.
     if(sanitize.isText(req)) {
-      return res.type('txt').send(JSON.stringify(obj), errorCode);
+      return res.type('txt').send(errObj.toString(), err.status);
     }
 
+    // Send a JSON response.  Default to JSON if we can't continue on.
+    if(sanitize.isJson(req) || next === undefined) {
+      return res.send(errObj, err.status);
+    }
+
+    // Keep moving on, we couldn't handle the request here.
     if(next !== undefined) {
-      console.log(req.params);
-      console.log("Invalid Format: " + req.url );
+      log.w("Can't send error if format is invalid.");
       return next();
-    }
-
-    // Default to JSON if we can't continue on.
-    if(obj !== undefined) {
-      return res.send(JSON.stringify(obj), errorCode);
     }
   }
 }
@@ -105,10 +137,12 @@ init = function(_config) {
   if(_config !== undefined) {
     sanitize = require(_config.paths.nodeModulesFolder + 'sanitize-it');  // Include bcrypt for password hashing.
     config = _config;
+    debug  = config.debugSystem;
+    log    = require(config.paths.serverLibFolder + "log")(config);
     isInit = true;
     return lib;
   } else {
-    console.log("[ ERROR ] Config initialize send if config is null");
+    log.e("Can't initialize send library if the config object is undefined.");
   }
 }
 

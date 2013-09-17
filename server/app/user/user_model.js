@@ -179,7 +179,7 @@ module.exports = function(app, db, config) {
       if(next !== undefined) {
         return next(err);
       }
-      return log.e(undefined, err);
+      return log.e(err);
     }
 
     var user = this,
@@ -253,7 +253,7 @@ module.exports = function(app, db, config) {
         if(next !== undefined) {
           return next(err);
         }
-        return log.e(undefined, err);
+        return log.e(err);
       }
 
       if(next !== undefined)

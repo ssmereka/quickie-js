@@ -103,19 +103,30 @@ var lib = {
 
   /**
    * Error (Red): Display an error to the user.
+   * Params:
+   *  err - a string or error object.  Error objects should 
+   *        implement the err.message and err.status properties
+   *        in order to be displayed properly.
    */
-  e: function(string, err, displayLog) {
-    if(! isDisplayLog(displayLog)) {
+  e: function(err, displayLog) {
+    if(! isDisplayLog(displayLog) || ! err) {
       return;
     }
 
-    if(string !== undefined) { 
-      console.log(formatLog(string, "ERROR").red);
+    // Check if the err is a string or a valid error object.
+    // Convert strings to a valid error object.
+    if( ! err.message) {
+      var obj = new Error(err);
+      err = obj;
+    }
+    
+    // Ensure the error objects have a status aka error code.
+    if( ! err.status ) {
+      err.status = 500;
     }
 
-    if(err !== undefined) {
-      console.log(err.red);
-    }
+    // Log the error
+    console.log(formatLog(err.message, err.status.toString()).red);
   },
 
   /**

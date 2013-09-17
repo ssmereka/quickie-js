@@ -35,33 +35,30 @@ module.exports = function(app, db, config) {
     switch(schema) {
       case 'userRoles':
         clearSchemaObjects("userroles");
-        addToSchema(new UserRole({ name: 'Super Admin', index: 0 }));
-        addToSchema(new UserRole({ name: 'Admin',       index: 1 }));
-        addToSchema(new UserRole({ name: 'Moderator',   index: 2 }));
-        addToSchema(new UserRole({ name: 'User',        index: 3 }));
-        addToSchema(new UserRole({ name: 'Guest',       index: 4 }));
-        info = "Loaded user roles to the database".white;
+        addToSchema(new UserRole({ name: 'super admin', index: 0 }));
+        addToSchema(new UserRole({ name: 'admin',       index: 1 }));
+        addToSchema(new UserRole({ name: 'moderator',   index: 2 }));
+        addToSchema(new UserRole({ name: 'user',        index: 3 }));
+        addToSchema(new UserRole({ name: 'guest',       index: 4 }));
+        if(next === undefined)
+          log.i("Loaded user roles to the database".white);
         break;
 
       case 'user':
         clearSchemaObjects("users");
-        var user = new User({ 
-          activated: true,
-          email: "admin@localhost.com",
-          firstName: "Admin",
-          password: config.installKey,
-          securityAnswer: config.installKey,
-          roles: [ "Admin" ], 
-          security_question: 'What is the install key?' });
+        var users = createUserObjects(config);
 
-        addToSchema(user, undefined);
-        info = "Loaded user ".white + "admin@".cyan + config.host.cyan + " with the ".white + "install key".cyan + " as the password.".white;
+        for(var i = 0; i < users.length; i++) {
+          addToSchema(users[i], undefined);
+          if(next === undefined) {
+            log.i("Loaded user ".white + users[i].email.cyan + " with the ".white + "install key".cyan + " as the password.".white);
+          }
+        }
         break;
     }
     
     if(next != undefined)
-      return next(undefined, info);
-    log.i(info);
+      return next(undefined, true);
   }
 
 
@@ -83,5 +80,63 @@ module.exports = function(app, db, config) {
         next(newSchemaObj);
     });
   }
+
+  function createUserObjects(config) {
+    users = [];
+    
+    // Super Admin
+    users.push(new User({ 
+      activated: true,
+      email: "superadmin@localhost.com",
+      firstName: "Super Admin",
+      password: config.installKey,
+      securityAnswer: config.installKey,
+      roles: [ "super admin" ], 
+      security_question: 'What is the install key?' }));
+    
+    if(config.debugSystem) {
+      // Admin
+      users.push(new User({ 
+        activated: true,
+        email: "admin@localhost.com",
+        firstName: "Admin",
+        password: config.installKey,
+        securityAnswer: config.installKey,
+        roles: [ "admin" ], 
+        security_question: 'What is the install key?' }));
+
+      // Moderator
+      users.push(new User({ 
+        activated: true,
+        email: "moderator@localhost.com",
+        firstName: "Moderator",
+        password: config.installKey,
+        securityAnswer: config.installKey,
+        roles: [ "moderator" ], 
+        security_question: 'What is the install key?' }));
+
+      // User
+      users.push(new User({ 
+        activated: true,
+        email: "user@localhost.com",
+        firstName: "User",
+        password: config.installKey,
+        securityAnswer: config.installKey,
+        roles: [ "user" ], 
+        security_question: 'What is the install key?' }));
+
+      // Guest
+      users.push(new User({ 
+        activated: true,
+        email: "guest@localhost.com",
+        firstName: "Guest",
+        password: config.installKey,
+        securityAnswer: config.installKey,
+        roles: [ "guest" ], 
+        security_question: 'What is the install key?' }));
+    }
+
+    return users;
+  };
 
 };
