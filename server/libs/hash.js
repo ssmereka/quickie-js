@@ -6,6 +6,7 @@
 
 var bcrypt,
     crypto,
+    log,
     saltRounds = 10;  // Number of rounds used to caclulate a salt for bcrypt password hashing.
 
 /* ************************************************** *
@@ -14,7 +15,7 @@ var bcrypt,
 
 var checkForInit = function() {
   if(! bcrypt || ! crypto) {
-    console.log("[ ERROR ] You must first initialize hash 'var hash = (\"hash\")(config);' before you use it.");
+    log.e("You must first initialize hash 'var hash = (\"hash\")(config);' before you use it.");
     return false;
   }
   return true;
@@ -48,7 +49,7 @@ var lib = {
     try {
       return bcrypt.hashSync(this.generateKeySync(keyLength).toLowerCase(), saltRounds);
     } catch(ex) {
-      console.log("GenerateHashKeySync(" + keyLength + "): Error " + ex);
+      log.e("GenerateHashKeySync(" + keyLength + "): Error " + ex.toString());
       return undefined;
     }
   },
@@ -69,7 +70,7 @@ var lib = {
     try {
       return crypto.randomBytes(keyLength).toString('hex').toLowerCase();
     } catch(ex) {
-      console.log("GenerateBaseKeySync(" + keyLength + "): Error " + ex);
+      log.e("GenerateBaseKeySync(" + keyLength + "): Error " + ex.toString());
       return undefined;
     }
   }
@@ -80,12 +81,15 @@ var lib = {
  * ************************************************** */
 
 var init = function(config) {
+  // Initialize items that do not require parameters.
+  log = require(config.paths.serverLibFolder + "log")();
+
   if(config !== undefined) {
     bcrypt = require(config.paths.nodeModulesFolder + 'bcrypt');  // Include bcrypt for password hashing.
     crypto = require('crypto');
     return lib;
   } else {
-    console.log("[ ERROR ] Config initialize hash if config is null");
+    log.e("Config initialize hash if config is undefined");
   }
 }
 

@@ -136,7 +136,6 @@ module.exports = function(app, db, config) {
         } else if(user.activated === false) {                                         // If the user is not activated, report an error.
             next(null, false, user.deactivatedMessage );
         } else {                                                                      // Otherwise, the username and password are valid, let the user login.
-            console.log("Login Successful");
             next(null, user);  //TODO: Limit what is shown here, remove password hash and stuff.
             user.successfulLogin();
         }
