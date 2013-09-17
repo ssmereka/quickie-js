@@ -1,23 +1,46 @@
-var isInit = false,
-    config,
-    colors;
+var isInit = false,   // Determines if we need to reinitalize the module.
+    config;           // Server configuration object.
 
+/***
+ * Colors Module
+ * Possible Colors: yellow, cyan, white, magenta, green, red, grey, blue, rainbow, zebra, random.
+ * Possible Styles: bold, italic, underline, inverse.
+ */
+var colors;
+
+/**
+ * Checks the display log variable and determines
+ * whether or not to show the log.
+ */
 var isDisplayLog = function(displayLog) {
+  // If the user didn't specify a display log variable, or
+  // if the display log variable is true, then return true.
   if(displayLog === undefined || displayLog) {
     return true;
   }
   return false;
 }
 
+/**
+ * Special characters and tags are added to the
+ * log string based on the type of log.
+ */
 var formatLog = function(string, tag) {
   if(/\r|\t/.exec(string)) {
     return string.replace(/\t/g, '          ');
+  } else if(tag) {
+    return "[ " + tag + " ] " + string;
   } else {
-    return "[ " + tag + " ] ";
+    return string;
   }
 }
 
-lib: {
+
+/**
+ * This is the public library object that is returned when 
+ * the module is required.
+ */
+var lib = {
 
   /**
    * Verbose (White): Display logs that are descriptive.
@@ -31,7 +54,7 @@ lib: {
   },
 
   /**
-   * Debug (Magenta): Display addtional information if the app is in debug mode.
+   * Debug (Magenta): Display addtional information only if the app is in debug mode.
    */
   d: function(string, displayLog) {
     if(! isDisplayLog(displayLog)) {
@@ -46,18 +69,29 @@ lib: {
   },
   
   /**
-   * Info (Green):
+   * Info (Cyan): Display general information about an action or event.
    */
   i: function(string, displayLog) {
     if(! isDisplayLog(displayLog)) {
       return;
     }
 
-    console.log(formatLog(string, "INFO").green);
+    console.log(formatLog(string, "INFO").cyan);
+  },
+  
+  /**
+   * Success (Green): Display a success message to the user.
+   */
+  s: function(string, displayLog) {
+    if(! isDisplayLog(displayLog)) {
+      return;
+    }
+
+    console.log(formatLog(string, "OK").green);
   },
 
   /**
-   * Warning (Orange):
+   * Warning (Yellow): Warn the user about an action or event.
    */
   w: function(string, displayLog) {
     if(! isDisplayLog(displayLog)) {
@@ -68,16 +102,25 @@ lib: {
   },
 
   /**
-   * Error (Red):
+   * Error (Red): Display an error to the user.
    */
-  e: function(string, displayLog) {
+  e: function(string, err, displayLog) {
     if(! isDisplayLog(displayLog)) {
       return;
     }
 
-    console.log(formatLog(string, "ERROR").red);
+    if(string !== undefined) { 
+      console.log(formatLog(string, "ERROR").red);
+    }
+
+    if(err !== undefined) {
+      console.log(err.red);
+    }
   },
 
+  /**
+   * Log (Default): Display a message using the default console settings.
+   */
   log: function(string, displayLog) {
     if(! isDisplayLog(displayLog)) {
       return;
@@ -93,7 +136,7 @@ lib: {
  * require the config object.
  */
 var init = function(_config) {
-  // Check to see if the file has been initalized, we don't need to re initalize it.
+  // Check to see if the file has been initalized, we don't need to re-initalize it.
   if(isInit) {
     return lib;
   }
@@ -108,4 +151,5 @@ var init = function(_config) {
   }
 }
 
+// Export the initalization function.
 exports = module.exports = init;
