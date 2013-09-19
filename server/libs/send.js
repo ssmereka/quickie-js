@@ -26,11 +26,13 @@ var sanitizeObj = function(obj, req) {
 }
 
 var sanitizeError = function(err, req) {
-
-
   // Return error as object.
   if(! sanitize.isApi(req)) {
-    return { "error" : err.message, "status": err.status };
+    if(debug) {
+      return { "error" : err.message, "status": err.status, "trace": err.stack };
+    } else {
+      return { "error" : err.message, "status": err.status };
+    }
   }
 
   // Return error as API object.
@@ -38,6 +40,9 @@ var sanitizeError = function(err, req) {
   apiErr["status"] = err.status;
   apiErr["error"] = err.message;
   apiErr["response"] = {};
+  if(debug) {
+    apiErr["trace"] = err.stack;
+  }
   return apiErr;
 }
 
@@ -111,14 +116,13 @@ var lib = {
       return res.type('txt').send(errObj.toString(), err.status);
     }
 
-    // Send a JSON response.  Default to JSON if we can't continue on.
-    if(sanitize.isJson(req) || next === undefined) {
+    // Send a JSON response.  Default to JSON if the format is not specified.
+    if(sanitize.isJson(req) || (req && req.format === undefined)) {
       return res.send(errObj, err.status);
     }
 
     // Keep moving on, we couldn't handle the request here.
     if(next !== undefined) {
-      log.w("Can't send error if format is invalid.");
       return next();
     }
   }

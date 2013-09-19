@@ -14,7 +14,7 @@ load.app(function(err, app, config, db) { // Create and configure our applicatio
   // Set the order of your routes.
   config.routes.push("controller");       // Load all non-static controllers.
   config.routes.push("error");            // Finally, load an error handler.  If no other routes handle the request, then the error handler will step in.
-  
+
   load.routes(function(err, success) {    // Dynamically require all of our routes in the correct order.
     load.server();                        // Start the server.
   });

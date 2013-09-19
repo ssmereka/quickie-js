@@ -30,7 +30,7 @@ module.exports = function(app, db, config) {
     lastUpdatedBy:       { type: ObjectId, ref: 'User' },                              // Who was the last person to update this user object.
     passwordHash:        { type: String },                                             // A hash generated from the user's password.  Never store a plain text password.
     passwordReset:       { type: String, default: hash.generateHashedKeySync(24) },    // A hash generated to reset a user's password.  This should never be plain text.
-    roles:               [ String ],                                                   // A list of roles the user is a part of.  Roles are used for authentication.
+    roles:               [{ type: ObjectId, ref: 'UserRole' }],                        // A list of roles the user is a part of.  Roles are used for authentication.
     securityQuestion:    { type: String },                                             // Challenge question given to a user when they try to reset their password.
     securityAnswerHash:  { type: String, default: hash.generateHashedKeySync(24) }     // User's correct answer to the challenge question when trying to reset their password.  This should never be stored as plain text.
   });

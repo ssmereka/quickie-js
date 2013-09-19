@@ -10,27 +10,39 @@ module.exports = function(app, db, config) {
  * ******************** Routes and Permissions
  * ************************************************** */
 
-  // Get a specific user.  Users with Admin role or higher 
-  // and the user themselves have access to this method.
-  app.get('/users/:userId.:format', auth.allowRolesOrHigher(["admin", "self"]), user);
+  var adminRole = auth.getRoleByName("admin"),
+      superAdminRole = auth.getRoleByName("superadmin"),
+      selfRole  = auth.getRoleByName("self"),
+      guestRole = auth.getRoleByName("guest"),
+      allRole   = auth.getRoleByName("all");
+
+
+  // All users with admin role or higher have access to the following
+  // methods.  Users also have permission to access their own data in the
+  // following methods.
+  app.all('/users/:userId.:format', auth.allowRolesOrHigher([adminRole, selfRole]));
+
+  // Get a specific user.   
+  app.get('/users/:userId.:format', user);
   
-  // Update a specific user.  Users with Admin role or higher 
-  // and the user themselves have access to this method.
-  app.post('/users/:userId.:format', auth.allowRolesOrHigher(["admin", "self" ]), update);
+  // Update a specific user.
+  app.post('/users/:userId.:format', update);
   
-  // Delete a specific user.  Users with Admin role or higher 
-  // and the user themselves have access to this method.
-  app.delete('/users/:userId.:format', auth.allowRolesOrHigher(["admin", "self"]), remove);
+  // Delete a specific user.
+  app.delete('/users/:userId.:format', remove);
+
 
   // All user methods after this require a user with an Admin
   // role or higher for access.
-  app.all('/users(/|.)*', auth.allowRolesOrHigher(["admin"]));
+ // app.all('/users(/|.)*', auth.allowRolesOrHigher([admin]));
+  app.all('/users(/|.)*', auth.allowRolesOrHigher([adminRole]));
 
   // Get all users information.
   app.get('/users.:format', users);
   
   // Create a new user.
   app.post('/users.:format', create);
+
 
 /* ************************************************** *
  * ******************** Route Methods

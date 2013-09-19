@@ -35,11 +35,15 @@ module.exports = function(app, db, config) {
     switch(schema) {
       case 'userRoles':
         clearSchemaObjects("userroles");
-        addToSchema(new UserRole({ name: 'super admin', index: 0 }));
-        addToSchema(new UserRole({ name: 'admin',       index: 1 }));
-        addToSchema(new UserRole({ name: 'moderator',   index: 2 }));
-        addToSchema(new UserRole({ name: 'user',        index: 3 }));
-        addToSchema(new UserRole({ name: 'guest',       index: 4 }));
+        var i = 0;
+        addToSchema(new UserRole({ name: 'all',         index: i, _id: ObjectId("5000000000000000000000a" + i++) }));
+        addToSchema(new UserRole({ name: 'self',        index: i, _id: ObjectId("5000000000000000000000a" + i++) }));
+
+        addToSchema(new UserRole({ name: 'super admin', index: i, _id: ObjectId("5000000000000000000000a" + i++) }));
+        addToSchema(new UserRole({ name: 'admin',       index: i, _id: ObjectId("5000000000000000000000a" + i++) }));
+        addToSchema(new UserRole({ name: 'moderator',   index: i, _id: ObjectId("5000000000000000000000a" + i++) }));
+        addToSchema(new UserRole({ name: 'user',        index: i, _id: ObjectId("5000000000000000000000a" + i++) }));
+        addToSchema(new UserRole({ name: 'guest',       index: i, _id: ObjectId("5000000000000000000000a" + i++) }));
         if(next === undefined)
           log.i("Loaded user roles to the database".white);
         break;
@@ -91,7 +95,7 @@ module.exports = function(app, db, config) {
       firstName: "Super Admin",
       password: config.installKey,
       securityAnswer: config.installKey,
-      roles: [ "super admin" ], 
+      roles: [ ObjectId("5000000000000000000000a2") ], 
       security_question: 'What is the install key?' }));
     
     if(config.debugSystem) {
@@ -102,7 +106,7 @@ module.exports = function(app, db, config) {
         firstName: "Admin",
         password: config.installKey,
         securityAnswer: config.installKey,
-        roles: [ "admin" ], 
+        roles: [ ObjectId("5000000000000000000000a3") ], 
         security_question: 'What is the install key?' }));
 
       // Moderator
@@ -112,7 +116,7 @@ module.exports = function(app, db, config) {
         firstName: "Moderator",
         password: config.installKey,
         securityAnswer: config.installKey,
-        roles: [ "moderator" ], 
+        roles: [ ObjectId("5000000000000000000000a4") ], 
         security_question: 'What is the install key?' }));
 
       // User
@@ -122,7 +126,7 @@ module.exports = function(app, db, config) {
         firstName: "User",
         password: config.installKey,
         securityAnswer: config.installKey,
-        roles: [ "user" ], 
+        roles: [ ObjectId("5000000000000000000000a5") ], 
         security_question: 'What is the install key?' }));
 
       // Guest
@@ -132,7 +136,7 @@ module.exports = function(app, db, config) {
         firstName: "Guest",
         password: config.installKey,
         securityAnswer: config.installKey,
-        roles: [ "guest" ], 
+        roles: [ ObjectId("5000000000000000000000a6") ], 
         security_question: 'What is the install key?' }));
     }
 
