@@ -4,23 +4,20 @@ module.exports = function(app, db, config) {
   
   var sender = require(config.paths.serverLibFolder + "send")(config),
       auth   = require(config.paths.serverLibFolder + "auth")(),
+      model  = require(config.paths.serverLibFolder + "model")(),
       User   = db.model('User');                                     // Pull in the user schema
 
 /* ************************************************** *
  * ******************** Routes and Permissions
  * ************************************************** */
-
+  // Load user roles used for authentication.
   var adminRole = auth.getRoleByName("admin"),
-      superAdminRole = auth.getRoleByName("superadmin"),
-      selfRole  = auth.getRoleByName("self"),
-      guestRole = auth.getRoleByName("guest"),
-      allRole   = auth.getRoleByName("all");
-
+      selfRole  = auth.getRoleByName("self");
 
   // All users with admin role or higher have access to the following
   // methods.  Users also have permission to access their own data in the
   // following methods.
-  app.all('/users/:userId.:format', auth.allowRolesOrHigher([adminRole, selfRole]));
+  app.all('/users/:userId.:format', auth.allowRolesOrHigher([adminRole, selfRole]), model.loadById(User, "userId"));
 
   // Get a specific user.   
   app.get('/users/:userId.:format', user);
@@ -31,14 +28,12 @@ module.exports = function(app, db, config) {
   // Delete a specific user.
   app.delete('/users/:userId.:format', remove);
 
-
   // All user methods after this require a user with an Admin
   // role or higher for access.
- // app.all('/users(/|.)*', auth.allowRolesOrHigher([admin]));
   app.all('/users(/|.)*', auth.allowRolesOrHigher([adminRole]));
 
   // Get all users information.
-  app.get('/users.:format', users);
+  app.get('/users.:format', model.load(User, {}, {sort: "lastName"}), users);
   
   // Create a new user.
   app.post('/users.:format', create);
@@ -62,16 +57,15 @@ module.exports = function(app, db, config) {
    * Get all the users and return them in the requested format.
    */
   function users(req, res, next) {
-    User.find().sort('name').exec(function(err, users) {             // Find all the users and sort them by their name attribute.
-      if(err) return next(err);
+    var users = req.queryResult;
+    if( ! users) return next();
 
-      // Sanitize the users information before sending it back.
-      for(var i = 0; i < users.length; i++) {
-        users[i] = users[i].sanitize();
-      }
+    // Sanitize the users information before sending it back.
+    for(var i = 0; i < users.length; i++) {
+      users[i] = users[i].sanitize();
+    }
 
-      sender.send(users, req, res);                                  // Handles the request by sending back the appropriate response, if we havn't already.
-    });
+    sender.send(users, req, res);                                  // Handles the request by sending back the appropriate response, if we havn't already.
   }
 
   /* Create

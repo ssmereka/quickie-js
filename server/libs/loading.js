@@ -469,6 +469,7 @@ var lib = {
       console.log("[ OK ] Listening on port ".green + port.cyan + " in ".green + app.settings.env.cyan + " mode.".green);
     }
   }
+  
 };
 
 // Export the library function.
