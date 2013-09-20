@@ -12,14 +12,22 @@ Template for a quick maintainable website using very powerful JavaScript framewo
 ### Frameworks
 [Angular-UI](https://github.com/angular-ui/bootstrap "Angular-UI")
 
-#### [Bower](http://bower.io/ "Bower")
-Bower is a front-end package manager for the web.
+#### [Bower](http://bower.io/ "Bower") is a front-end package manager for the web.
 
-Adding a new client-side package is easy, here is an example for angular:
+Install bower globaly using npm:
+
+    npm install -g bower
+
+Bower acts a lot like npm.  There is a bower.json file that contains all of our package dependencies with version numbers.  We can easily install all of the packages with:
+
+    bower install
+
+We can add new packages:
 
     bower install angular-bootstrap --save
 
 The "--save" flag tells bower to add this to our bower.json file as a dependency.
 
-## License
-[MIT License](http://www.tldrlegal.com/license/mit-license "MIT License")
+
+## [MIT License](http://www.tldrlegal.com/license/mit-license "MIT License")
+
