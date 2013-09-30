@@ -49,7 +49,7 @@ module.exports = function(app, db, config) {
    * Returns the user's password hash.
    */
   User.virtual('password').get(function(){
-    return this.securityAnswerHash;
+    return this.passwordHash;
   });
 
   /* Set Password
@@ -63,6 +63,7 @@ module.exports = function(app, db, config) {
 
     this.passwordHash = bcrypt.hashSync(password, saltRounds);             // Synchronous call to create a bcrypt salt & hash, then set that hash as the password.
     this.passwordReset = hash.generateKeySync(24);
+    return true;
   });
 
   /* Get Security Answer

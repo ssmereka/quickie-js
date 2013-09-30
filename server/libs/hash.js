@@ -26,6 +26,33 @@ var checkForInit = function() {
  * ************************************************** */
 
 var lib = {
+  hashKey: function(key, _saltRounds, next) {
+    if( ! checkForInit)
+      return;
+
+    _saltRounds = (_saltRounds === undefined || _saltRounds < 0) ? saltRounds : _saltRounds;
+
+    bcrypt.hash(key, saltRounds, function(err, hash) {
+      if(err) return next(err);
+
+      return next(null, hash);
+    });
+  },
+
+  hashKeySync: function(key, _saltRounds) {
+    if( ! checkForInit())
+      return;
+
+    _saltRounds = (_saltRounds === undefined || _saltRounds < 0) ? saltRounds : _saltRounds;
+
+    try {
+      return bcrypt.hashSync(key, _saltRounds);
+    } catch(ex) {
+      log.e("HashKeySync(" + key + "): Error " + ex.toString());
+      return undefined;
+    }
+  },
+
   generateHashedKey: function(keyLength, next) {
     if( ! checkForInit())
       return;

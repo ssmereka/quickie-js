@@ -28,20 +28,26 @@ var sanitizeObj = function(obj, req) {
 var sanitizeError = function(err, req) {
   // Return error as object.
   if(! sanitize.isApi(req)) {
+    var obj = { "error" : err.message, "status": err.status };
+    
     if(debug) {
-      return { "error" : err.message, "status": err.status, "trace": err.stack };
-    } else {
-      return { "error" : err.message, "status": err.status };
+      obj["trace"] = err.stack;
+      obj["url"] = (req && req.url) ? req.url : undefined;
     }
+    
+    return obj;
   }
 
   // Return error as API object.
   var apiErr = {}
-  apiErr["status"] = err.status;
+  //apiErr["status"] = err.status;
+  apiErr["status"] = "ERROR";
+  apiErr["errorcode"] = err.status;
   apiErr["error"] = err.message;
   apiErr["response"] = {};
   if(debug) {
     apiErr["trace"] = err.stack;
+    apiErr["url"] = (req && req.url) ? req.url : undefined;
   }
   return apiErr;
 }
@@ -111,6 +117,11 @@ var lib = {
     // Create an object we can send to the user.
     var errObj = sanitizeError(err, req);
     
+    // Log the error url if it is available.
+    if(errObj.url) {
+      log.d("\t" + "URL: " + req.url)
+    }
+
     // Send a TEXT response.
     if(sanitize.isText(req)) {
       return res.type('txt').send(errObj.toString(), err.status);
