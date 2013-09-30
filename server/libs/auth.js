@@ -34,7 +34,7 @@ var checkRolePreconditions = function(req, roles, next) {
   if( ! checkForInit()) {
     log.d("Auth lib was not initialized properly, permission denied for all users.", debug);
     var err = new Error(permissionDeniedText);
-    err.status = 401;
+    err.status = 403;
     return next(err);
   }
 
@@ -42,7 +42,7 @@ var checkRolePreconditions = function(req, roles, next) {
   if( ! req.isAuthenticated() ) {
     log.d("User is not logged in, permission denied.", debug);
     var err = new Error("You must be logged in to perform that action.")
-    err.status = 401;
+    err.status = 403;
     return next(err);
   }
 
@@ -167,12 +167,11 @@ var lib = {
    * users will be shown an error.
    */
   allowAuth: function allowAuth() {
-    return allowRoles || (allowRoles = function(req, res, next) {
+    return allowRoles[true] || (allowRoles[true] = function(req, res, next) {
       if(req.isAuthenticated()) {
         return next();
       }
-
-      return sender.createAndSendError(permissionDeniedText, 401, req, res, next);
+      return sender.createAndSendError(permissionDeniedText, 403, req, res, next);
     });
   },
 
@@ -214,7 +213,7 @@ var lib = {
 
         // If the user does not have any of the authorized roles, then do not allow them any further.
         log.d("Permission denied, user does not contain an allowed role.", debug);
-        sender.createAndSendError(permissionDeniedText, 401, req, res, next);
+        sender.createAndSendError(permissionDeniedText, 403, req, res, next);
       });
     });
   },
@@ -261,7 +260,7 @@ var lib = {
 
         // If the user does not have any of the authorized roles, then do not allow them any further.
         log.d("Permission denied, user does not contain an allowed role.", debug);
-        sender.createAndSendError(permissionDeniedText, 401, req, res, next);
+        sender.createAndSendError(permissionDeniedText, 403, req, res, next);
       });
     });
   },
@@ -309,7 +308,7 @@ var lib = {
 
         // If the user does not have any of the authorized roles, then do not allow them any further.
         log.d("Permission denied, user does not contain an allowed role.", debug);
-        sender.createAndSendError(permissionDeniedText, 401, req, res, next);
+        sender.createAndSendError(permissionDeniedText, 403, req, res, next);
       });
     });
   }
@@ -334,7 +333,7 @@ var lib = {
 
         // If the user does not have any of the authorized roles, then do not allow them any further.
         log.d("Permission denied, user does not contain an allowed role.", debug);
-        return sender.createAndSendError(permissionDeniedText, 401, req, res, next);
+        return sender.createAndSendError(permissionDeniedText, 403, req, res, next);
       });
     });
   },
@@ -361,7 +360,7 @@ var lib = {
         // If the user does not have any of the authorized roles, then do not allow them any further.
         log.d("Permission denied, user does not contain an allowed role.", debug);
         err = new Error("You do not have permission to perform that action.");
-        err.status = 401;
+        err.status = 403;
         return next(err, req, res, next)
       });
     });

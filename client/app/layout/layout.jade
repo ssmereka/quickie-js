@@ -1,0 +1,94 @@
+doctype 5
+html(ng-app="app")
+  head
+
+    // Override the head for a child page.
+    block head_override
+
+      // Override all css files for a child page.
+      block css_override
+        
+        // Bootstrap CSS v3.0.0
+        link(href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css", rel="stylesheet")
+
+        // Font Awesome CSS
+        link(href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.min.css", rel="stylesheet")
+        
+        // App Layout CSS
+        link(href='/css/style.css', rel='stylesheet')
+        
+        // Individual pages can append their CSS files using this block.
+        block css
+      
+      // Append additional head elements in child pages.
+      block head
+
+
+  body(style="zoom: 1;")
+    
+    // Override the body for a child page.
+    block body_override
+
+      // Override the header for a child page.
+      block header_override
+        #header
+          .container
+            - if (typeof(isSession) !== 'undefined')
+              .ng-cloak(ng-init="authenticated= #{isSession}")
+            - else
+              .ng-cloak(ng-init="authenticated= false")
+
+            .anonymous_header(ng-hide="authenticated")
+            include anonymous_header
+            .header(ng-show="authenticated")
+            include header
+
+            // Append additional head elements to in a child page.
+            block header
+
+      block page_override
+        #container.container
+          #page
+            block page
+
+
+      block modals
+
+      block footer_override
+        #footer.container
+          include footer
+          block footer
+
+    
+      block scripts_override
+
+        include localScripts
+        include cdnScripts
+
+    
+      // Angular JS v1.0.8
+      script(src='https://ajax.googleapis.com/ajax/libs/angularjs/1.0.8/angular.min.js', type="application/javascript")
+    script(src='https://ajax.googleapis.com/ajax/libs/angularjs/1.0.7/angular-resource.min.js')
+    
+
+
+
+
+    // Angular Services, TODO: Automtaically loop through and load these.
+    script(src="/core/deal/deal_service.js")
+    //script(src="/core/layout/layout_service.js")
+
+    // Controllers
+    //script(src="/core/home/home_controller.js", type="application/javascript")
+
+    // Angular App(s)
+    script(src="/core/app.js")
+
+    // Load Resources
+    script(src="/core/category/category_resource.js", type="application/javascript");
+    script(src="/core/platform/platform_resource.js", type="application/javascript");
+
+    // Load Controllers  
+    script(src="/core/upload/upload_controller.js", type="application/javascript");
+    block scripts
+    

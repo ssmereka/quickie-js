@@ -1,0 +1,9 @@
+{
+  "name": "quickie-js",
+  "version": "0.0.1",
+  "main": "",
+  "ignore": [],
+  "dependencies": {
+    "angular-bootstrap": "~0.6.0"
+  }
+}

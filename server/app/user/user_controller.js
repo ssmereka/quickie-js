@@ -7,9 +7,11 @@ module.exports = function(app, db, config) {
       model  = require(config.paths.serverLibFolder + "model")(),
       User   = db.model('User');                                     // Pull in the user schema
 
-/* ************************************************** *
- * ******************** Routes and Permissions
- * ************************************************** */
+
+  /* ************************************************** *
+   * ******************** Routes and Permissions
+   * ************************************************** */
+  
   // Load user roles used for authentication.
   var adminRole = auth.getRoleByName("admin"),
       selfRole  = auth.getRoleByName("self");
