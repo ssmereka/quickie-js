@@ -115,23 +115,26 @@ var lib = {
   },
 
   load: function load(Schema, queryObject, opts) {
-    return load[Schema, queryObject] || (load[Schema, queryObject] = function(req, res, next) {
+    if(!queryObject) {
+      queryObject = {};
+    }
+    return load[Schema, queryObject, opts] || (load[Schema, queryObject, opts] = function(req, res, next) {
+    //return function(req, res, next) {
       var sort = "";
+      var query = mergeObjects(req.query, queryObject);
 
-      queryObject = mergeObjects(req.query, queryObject);
-
-      log.d("Query: " + JSON.stringify(queryObject));
+      log.d("Query: " + JSON.stringify(query));
 
       if(opts) {
         sort = (opts["sort"]) ? opts["sort"] : "";
       }
 
-      Schema.find(queryObject).sort(sort).exec(function(err, obj) {
+      Schema.find(query).sort(sort).exec(function(err, obj) {
         if(err) {
           next(err);
         } else if( ! obj){
           log.w("Could not find schema object.  Query Object:", debug);
-          log.w("\t" + queryObject);
+          log.w("\t" + query);
         } else {
           req.queryResult = obj;
         }

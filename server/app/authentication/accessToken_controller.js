@@ -25,6 +25,8 @@ module.exports = function(app, db, config) {
 
   app.get('/accessToken.:format', requestToken);
 
+  app.get('/accessTokens.:format', model.load(AccessToken, {}, { "sort": "creationDate"}), accessTokens);
+
   // All users with admin role or higher have access to the following
   // methods.  Users also have permission to access their own data in the
   // following methods.
